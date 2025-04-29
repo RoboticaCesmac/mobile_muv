@@ -1,0 +1,52 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/user_avatar.dart';
+import 'api_client.dart';
+
+class UserService {
+  final ApiClient _apiClient = ApiClient();
+
+  // Buscar avatares de usuário disponíveis
+  Future<List<UserAvatar>> getUserAvatars() async {
+    try {
+      final response = await _apiClient.get('mobile/user-avatar');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final List<dynamic> avatarsData = responseData['data'];
+        
+        return avatarsData.map((avatarData) => UserAvatar.fromJson(avatarData)).toList();
+      } else {
+        throw Exception('Falha ao buscar avatares: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erro ao buscar avatares: $e');
+    }
+  }
+
+  // Completar primeiro login do usuário
+  Future<bool> completeFirstLogin({
+    required String userName,
+    required String gender,
+    required String dateOfBirth,
+    required int vehicleId,
+    required int avatarId,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        'mobile/user/first-login',
+        body: {
+          'user_name': userName,
+          'gender': gender,
+          'date_of_birth': dateOfBirth,
+          'vehicle_id': vehicleId,
+          'avatar_id': avatarId,
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Erro ao completar o primeiro login: $e');
+    }
+  }
+} 
