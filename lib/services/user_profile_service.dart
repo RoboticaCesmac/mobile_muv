@@ -22,6 +22,8 @@ class UserProfileService {
       print('----------------------------------');
       print(Uri.parse('$baseUrl/auth/me'));
       print('----------------------------------');
+      print(response.body);
+      print('----------------------------------');
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         return UserProfile.fromJson(data);

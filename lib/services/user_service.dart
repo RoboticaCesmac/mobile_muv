@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user_avatar.dart';
 import 'api_client.dart';
+import 'token_manager.dart';
 
 class UserService {
   final ApiClient _apiClient = ApiClient();
@@ -9,7 +10,7 @@ class UserService {
   // Buscar avatares de usuário disponíveis
   Future<List<UserAvatar>> getUserAvatars() async {
     try {
-      final response = await _apiClient.get('mobile/user-avatar');
+      final response = await _apiClient.get('mobile/avatar/all');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -47,6 +48,29 @@ class UserService {
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Erro ao completar o primeiro login: $e');
+    }
+  }
+
+  // Fazer logout do usuário
+  Future<void> logout() async {
+    try {
+      await _apiClient.post('mobile/auth/logout');
+      await TokenManager.clearToken();
+    } catch (e) {
+      throw Exception('Erro ao fazer logout: $e');
+    }
+  }
+
+  // Excluir conta do usuário
+  Future<void> deleteAccount() async {
+    try {
+      final response = await _apiClient.delete('mobile/user');
+      if (response.statusCode != 200) {
+        throw Exception('Falha ao excluir conta: ${response.statusCode}');
+      }
+      await TokenManager.clearToken();
+    } catch (e) {
+      throw Exception('Erro ao excluir conta: $e');
     }
   }
 } 

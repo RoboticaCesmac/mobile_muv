@@ -44,6 +44,19 @@ class ApiClient {
     );
   }
 
+  Future<http.Response> patch(String endpoint, {Map<String, dynamic>? body}) async {
+    final headers = {
+      'Content-Type': 'application/json',
+      ...TokenManager.getAuthHeader(),
+    };
+
+    return http.patch(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: headers,
+      body: body != null ? jsonEncode(body) : null,
+    );
+  }
+
   Future<http.Response> delete(String endpoint) async {
     final headers = {
       'Content-Type': 'application/json',

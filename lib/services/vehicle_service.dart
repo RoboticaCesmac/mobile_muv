@@ -9,7 +9,7 @@ class VehicleService {
   // Buscar veículos
   Future<List<Vehicle>> getVehicles() async {
     try {
-      final response = await _apiClient.get('mobile/vehicle');
+      final response = await _apiClient.get('mobile/vehicle/all');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -21,6 +21,22 @@ class VehicleService {
       }
     } catch (e) {
       throw Exception('Erro ao buscar veículos: $e');
+    }
+  }
+
+  // Atualizar veículo do usuário
+  Future<bool> updateUserVehicle(int vehicleId) async {
+    try {
+      final response = await _apiClient.patch(
+        'mobile/user/user-vehicle',
+        body: {
+          'vehicle_id': vehicleId,
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Erro ao atualizar veículo: $e');
     }
   }
 } 

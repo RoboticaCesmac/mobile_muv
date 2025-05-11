@@ -10,7 +10,7 @@ class EnvironmentConfig {
   EnvironmentConfig._internal();
   
   /// Define se está usando a URL de produção ou local
-  static bool _isProduction = false;
+  static bool _isProduction = true;
   
   static const String productionUrl = 'http://155.138.160.56/api/v1';
   
