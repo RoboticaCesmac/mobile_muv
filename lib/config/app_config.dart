@@ -1,6 +1,8 @@
+import 'environment_config.dart';
+
 class AppConfig {
   // Google Maps API Key
-  static const String googleMapsApiKey = 'AIzaSyDZldnJDF5b2eB2P02ahWxRufStLnPBGHU';
+  static String get googleMapsApiKey => EnvironmentConfig.googleMapsApiKey;
   
   // Outras configurações globais podem ser adicionadas aqui
 } 

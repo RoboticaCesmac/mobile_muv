@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Classe para gerenciar as URLs da API
 class EnvironmentConfig {
   /// Instância singleton
@@ -12,15 +14,16 @@ class EnvironmentConfig {
   /// Define se está usando a URL de produção ou local
   static bool _isProduction = true;
   
-  static const String productionUrl = 'http://155.138.160.56/api/v1';
-  
-  static const String localUrl = 'http://192.168.1.151:8000/api/v1';
-  // Para iOS ou teste no navegador, use:
-  // static const String localUrl = 'http://localhost:8000/api/v1';
-  
   /// Obtém a URL base ativa
   static String get baseUrl {
-    return _isProduction ? productionUrl : localUrl;
+    return _isProduction 
+        ? dotenv.env['PRODUCTION_URL'] ?? ''
+        : dotenv.env['LOCAL_URL'] ?? 'http://localhost:8000/api/v1';
+  }
+
+  /// Obtém a chave da API do Google Maps
+  static String get googleMapsApiKey {
+    return dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
   }
   
   /// Verifica se está usando ambiente de produção
@@ -29,18 +32,18 @@ class EnvironmentConfig {
   /// Muda para URL de produção
   static void useProduction() {
     _isProduction = true;
-    print('API: Usando servidor de produção - $productionUrl');
+    print('API: Usando servidor de produção - $baseUrl');
   }
   
   /// Muda para URL local
   static void useLocal() {
     _isProduction = false;
-    print('API: Usando servidor local - $localUrl');
+    print('API: Usando servidor local - $baseUrl');
   }
   
   /// Alterna entre produção e local
   static void toggle() {
     _isProduction = !_isProduction;
-    print('API: Usando ${_isProduction ? "servidor de produção" : "servidor local"} - ${baseUrl}');
+    print('API: Usando ${_isProduction ? "servidor de produção" : "servidor local"} - $baseUrl');
   }
 } 

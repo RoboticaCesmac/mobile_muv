@@ -77,8 +77,12 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
                 Container(
-                  margin: const EdgeInsets.only(top: 40, bottom: 60),
+                  margin: const EdgeInsets.only(top: 20, bottom: 40),
                   alignment: Alignment.center,
                   child: Image.asset(
                     'assets/LogoMarca.png',
