@@ -1,4 +1,4 @@
-// import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Gerencia o token de autenticação globalmente na aplicação
 class TokenManager {
@@ -20,9 +20,8 @@ class TokenManager {
   /// Define o token atual
   static Future<void> setToken(String token) async {
     _token = token;
-    // Removido temporariamente o armazenamento persistente
-    // final prefs = await SharedPreferences.getInstance();
-    // await prefs.setString(_tokenKey, token);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
   }
 
   /// Retorna o tipo do token (geralmente "Bearer")
@@ -33,9 +32,8 @@ class TokenManager {
   /// Define o tipo do token
   static Future<void> setTokenType(String tokenType) async {
     _tokenType = tokenType;
-    // Removido temporariamente o armazenamento persistente
-    // final prefs = await SharedPreferences.getInstance();
-    // await prefs.setString(_tokenTypeKey, tokenType);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenTypeKey, tokenType);
   }
 
   /// Retorna o tempo de expiração do token
@@ -46,18 +44,16 @@ class TokenManager {
   /// Define o tempo de expiração do token
   static Future<void> setExpiresIn(int expiresIn) async {
     _expiresIn = expiresIn;
-    // Removido temporariamente o armazenamento persistente
-    // final prefs = await SharedPreferences.getInstance();
-    // await prefs.setInt(_tokenExpiryKey, expiresIn);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_tokenExpiryKey, expiresIn);
   }
 
   /// Carrega os dados do token do armazenamento persistente
   static Future<void> loadToken() async {
-    // Removido temporariamente o carregamento persistente
-    // final prefs = await SharedPreferences.getInstance();
-    // _token = prefs.getString(_tokenKey);
-    // _tokenType = prefs.getString(_tokenTypeKey);
-    // _expiresIn = prefs.getInt(_tokenExpiryKey);
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString(_tokenKey);
+    _tokenType = prefs.getString(_tokenTypeKey);
+    _expiresIn = prefs.getInt(_tokenExpiryKey);
   }
 
   /// Limpa o token (para logout)
@@ -66,11 +62,10 @@ class TokenManager {
     _tokenType = null;
     _expiresIn = null;
     
-    // Removido temporariamente a limpeza persistente
-    // final prefs = await SharedPreferences.getInstance();
-    // await prefs.remove(_tokenKey);
-    // await prefs.remove(_tokenTypeKey);
-    // await prefs.remove(_tokenExpiryKey);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_tokenTypeKey);
+    await prefs.remove(_tokenExpiryKey);
   }
 
   /// Verifica se o token existe
