@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/user_profile.dart';
@@ -7,6 +8,8 @@ import '../services/route_service.dart';
 import '../screens/recording_page.dart';
 import '../screens/settings_page.dart';
 import '../config/app_config.dart';
+import '../services/connectivity_service.dart';
+import '../services/route_recording_service.dart';
 
 /// Homepage com scroll infinito para carregar rotas
 ///
@@ -28,6 +31,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final _userProfileService = UserProfileService();
   final _routeService = RouteService();
+  final _routeRecordingService = RouteRecordingService();
+  final _connectivityService = ConnectivityService();
   Future<UserProfile?>? _userProfileFuture;
   List<RouteData> _allRoutes = [];
   bool _isLoading = false;
@@ -39,6 +44,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   // Para animações
   List<bool> _routeVisibility = [];
   
+  StreamSubscription? _connectivitySubscription;
+  
   @override
   void initState() {
     super.initState();
@@ -49,6 +56,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     
     // Add scroll listener for infinite scrolling
     _scrollController.addListener(_scrollListener);
+    
+    _initPage();
+    
+    // Ouvir mudanças de conectividade
+    _connectivitySubscription = _connectivityService.connectionChangeStream.listen((isConnected) {
+      if (isConnected) {
+        // Quando a internet voltar, tenta sincronizar rotas offline
+        _syncOfflineRoutes();
+      }
+    });
   }
   
   // Listen to scroll events to implement infinite scrolling
@@ -65,6 +82,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // Remover o observer
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 
@@ -197,6 +215,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  // Sincroniza rotas offline caso existam
+  Future<void> _syncOfflineRoutes() async {
+    try {
+      print('Verificando e sincronizando rotas offline...');
+      await _routeRecordingService.syncOfflineRoutes();
+      
+      // Atualiza a lista de rotas após sincronização
+      _refreshData();
+    } catch (e) {
+      print('Erro ao sincronizar rotas offline: $e');
+    }
+  }
+  
+  Future<void> _initPage() async {
+    _refreshData();
+    
+    // Verifica se existem rotas offline para sincronizar
+    final isConnected = await _connectivityService.checkConnectivity();
+    if (isConnected) {
+      _syncOfflineRoutes();
     }
   }
 
