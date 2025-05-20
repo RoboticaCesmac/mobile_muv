@@ -11,16 +11,6 @@ import '../config/app_config.dart';
 import '../services/connectivity_service.dart';
 import '../services/route_recording_service.dart';
 
-/// Homepage com scroll infinito para carregar rotas
-///
-/// Funcionalidades implementadas:
-/// - Carrega inicialmente a primeira página de rotas
-/// - Scroll infinito: carrega automaticamente mais 4 rotas quando o usuário chega a 70% da lista
-/// - Animações suaves quando novas rotas são carregadas
-/// - Indicador de carregamento visível quando mais rotas estão sendo buscadas
-/// - Pull-to-refresh para atualizar a lista inteira
-/// - Estado vazio com instruções claras
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -38,39 +28,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isLoading = false;
   bool _initialLoadDone = false;
   final ScrollController _scrollController = ScrollController();
-  int _currentPage = 1;  // Current page for pagination
-  bool _hasMoreRoutes = true;  // Flag to track if more routes are available
+  int _currentPage = 1;
+  bool _hasMoreRoutes = true;
   
-  // Para animações
   List<bool> _routeVisibility = [];
-  
-  StreamSubscription? _connectivitySubscription;
   
   @override
   void initState() {
     super.initState();
-    // Registrar o observer
     WidgetsBinding.instance.addObserver(this);
     _userProfileFuture = _userProfileService.getUserProfile();
     _loadRoutes();
     
-    // Add scroll listener for infinite scrolling
     _scrollController.addListener(_scrollListener);
     
     _initPage();
-    
-    // Ouvir mudanças de conectividade
-    _connectivitySubscription = _connectivityService.connectionChangeStream.listen((isConnected) {
-      if (isConnected) {
-        // Quando a internet voltar, tenta sincronizar rotas offline
-        _syncOfflineRoutes();
-      }
-    });
   }
   
-  // Listen to scroll events to implement infinite scrolling
   void _scrollListener() {
-    // Quando o usuário rolar até 70% da lista, comece a carregar mais rotas
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.7 &&
         !_isLoading && _hasMoreRoutes) {
       _loadMoreRoutes();
@@ -79,16 +54,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   
   @override
   void dispose() {
-    // Remover o observer
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
-    _connectivitySubscription?.cancel();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Recarregar os dados quando o app voltar para o primeiro plano
     if (state == AppLifecycleState.resumed) {
       _refreshData();
     }
@@ -98,8 +70,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void didChangeDependencies() {
     super.didChangeDependencies();
     
-    // Verificar se a página está montada e visível
-    // Usando uma flag para evitar atualizações desnecessárias
     if (!_initialLoadDone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -110,19 +80,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  // Reset and load first page of routes
   void _refreshData() {
     setState(() {
       _userProfileFuture = _userProfileService.getUserProfile();
-      _allRoutes = []; // Limpar rotas existentes
-      _routeVisibility = []; // Limpar visibilidades
-      _currentPage = 1; // Reset to first page
-      _hasMoreRoutes = true; // Reset the flag
+      _allRoutes = [];
+      _routeVisibility = [];
+      _currentPage = 1;
+      _hasMoreRoutes = true;
       _loadRoutes();
     });
   }
 
-  // Load the first page of routes
   Future<void> _loadRoutes() async {
     if (_isLoading) return;
     
@@ -133,27 +101,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     try {
       final routes = await _routeService.getRoutes(page: _currentPage);
       
-      // Inicializar visibilidade das rotas
+      if (routes.isEmpty) {
+        setState(() {
+          _hasMoreRoutes = false;
+          _isLoading = false;
+        });
+        return;
+      }
+      
       List<bool> visibility = List.generate(routes.length, (index) => false);
       
       setState(() {
         _allRoutes = routes;
         _routeVisibility = visibility;
         _isLoading = false;
-        // If we got fewer than 4 routes (or none), there are no more
-        if (routes.isEmpty || routes.length < 4) {
-          _hasMoreRoutes = false;
-        }
+        _hasMoreRoutes = routes.length >= 4; // Se receber menos de 4 rotas, não há mais páginas
       });
       
-      // Animar a entrada dos itens após um breve atraso
       await Future.delayed(const Duration(milliseconds: 100));
       for (int i = 0; i < routes.length; i++) {
         if (mounted) {
           setState(() {
             _routeVisibility[i] = true;
           });
-          // Pequeno atraso entre cada animação
           await Future.delayed(const Duration(milliseconds: 50));
         }
       }
@@ -161,84 +131,61 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       print('Erro ao carregar rotas: $e');
       setState(() {
         _isLoading = false;
-        _allRoutes = [];
         _hasMoreRoutes = false;
       });
     }
   }
   
-  // Load the next page of routes and append to the existing list
   Future<void> _loadMoreRoutes() async {
-    if (_isLoading || !_hasMoreRoutes) return;
+    if (_isLoading || !_hasMoreRoutes) {
+      return;
+    }
     
     setState(() {
       _isLoading = true;
     });
     
+    _currentPage++;
+    
     try {
-      _currentPage++; // Increment to next page
+      final routes = await _routeService.getRoutes(page: _currentPage);
       
-      // Adicionar um pequeno atraso para mostrar o indicador de carregamento
-      await Future.delayed(const Duration(milliseconds: 800));
-      
-      final moreRoutes = await _routeService.getRoutes(page: _currentPage);
-      final startIndex = _allRoutes.length;
-      
-      // Adicionar novas visibilidades como falso (inicialmente invisíveis)
-      List<bool> newVisibility = List.generate(moreRoutes.length, (index) => false);
+      if (routes.isEmpty) {
+        setState(() {
+          _hasMoreRoutes = false;
+          _isLoading = false;
+          _currentPage--; // Volta para a página anterior se não houver mais rotas
+        });
+        return;
+      }
       
       setState(() {
-        _allRoutes.addAll(moreRoutes); // Append new routes to existing list
-        _routeVisibility.addAll(newVisibility);
+        _allRoutes.addAll(routes);
+        _routeVisibility.addAll(List.generate(routes.length, (index) => false));
         _isLoading = false;
-        // If we got fewer than 4 routes (or none), there are no more
-        if (moreRoutes.isEmpty || moreRoutes.length < 4) {
-          _hasMoreRoutes = false;
-        }
+        _hasMoreRoutes = routes.length >= 4; // Se receber menos de 4 rotas, não há mais páginas
       });
       
-      // Animar a entrada dos novos itens
-      await Future.delayed(const Duration(milliseconds: 100));
-      for (int i = 0; i < moreRoutes.length; i++) {
+      // Anima a entrada das novas rotas
+      for (int i = _allRoutes.length - routes.length; i < _allRoutes.length; i++) {
         if (mounted) {
           setState(() {
-            _routeVisibility[startIndex + i] = true;
+            _routeVisibility[i] = true;
           });
-          // Pequeno atraso entre cada animação
           await Future.delayed(const Duration(milliseconds: 50));
         }
       }
     } catch (e) {
       print('Erro ao carregar mais rotas: $e');
-      // Roll back page counter on error
-      _currentPage--;
       setState(() {
         _isLoading = false;
+        _currentPage--; // Volta para a página anterior em caso de erro
       });
     }
   }
 
-  // Sincroniza rotas offline caso existam
-  Future<void> _syncOfflineRoutes() async {
-    try {
-      print('Verificando e sincronizando rotas offline...');
-      await _routeRecordingService.syncOfflineRoutes();
-      
-      // Atualiza a lista de rotas após sincronização
-      _refreshData();
-    } catch (e) {
-      print('Erro ao sincronizar rotas offline: $e');
-    }
-  }
-  
   Future<void> _initPage() async {
     _refreshData();
-    
-    // Verifica se existem rotas offline para sincronizar
-    final isConnected = await _connectivityService.checkConnectivity();
-    if (isConnected) {
-      _syncOfflineRoutes();
-    }
   }
 
   @override
@@ -248,10 +195,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       body: SafeArea(
         child: Column(
           children: [
-            // Seção do perfil do usuário
             _buildUserProfileSection(),
             
-            // Seção de atividades
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,7 +407,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     context,
                     MaterialPageRoute(builder: (context) => const RecordingPage()),
                   ).then((_) {
-                    // Recarregar os dados quando retornar da tela de gravação
                     _refreshData();
                   });
                 },
@@ -474,7 +418,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     context,
                     MaterialPageRoute(builder: (context) => const SettingsPage()),
                   ).then((shouldRefresh) {
-                    // Recarregar os dados quando retornar da tela de configurações
                     if (shouldRefresh == true) {
                       _refreshData();
                     }
@@ -491,7 +434,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Widget _buildUserProfileSection() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 12.0), // Reduzindo o padding
+      padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 12.0),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -529,15 +472,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             children: [
               Row(
                 children: [
-                  // Avatar do usuário
                   CircleAvatar(
-                    radius: 26, // Reduzindo o tamanho do avatar
+                    radius: 26,
                     backgroundImage: NetworkImage(userProfile.avatar.avatarUrl),
                     backgroundColor: Colors.grey[200],
                   ),
-                  const SizedBox(width: 12), // Reduzindo o espaçamento
+                  const SizedBox(width: 12),
                   
-                  // Informações do usuário
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,16 +486,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         Text(
                           'Olá, ${userProfile.userName}!',
                           style: const TextStyle(
-                            fontSize: 18, // Reduzindo o tamanho da fonte
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 6), // Reduzindo o espaçamento
+                        const SizedBox(height: 6),
                         
-                        // Barra de progresso e ícone de level na mesma linha
                         Row(
                           children: [
-                            // Barra de progresso baseada na pegada de carbono atual e pegada necessária para o próximo nível
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,14 +501,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   Tooltip(
                                     message: 'Pegada de Carbono: ${userProfile.profileData.totalCarbonFootprint}/${userProfile.profileData.totalCarbonFootprintOfNextLevel}',
                                     child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8), // Reduzindo o raio
+                                      borderRadius: BorderRadius.circular(8),
                                       child: LinearProgressIndicator(
-                                        // Calcula o progresso: pegada de carbono atual / pegada de carbono necessária para o próximo nível
                                         value: userProfile.profileData.totalCarbonFootprint / 
                                             userProfile.profileData.totalCarbonFootprintOfNextLevel,
                                         backgroundColor: Colors.grey[200],
                                         color: const Color(0xFF18694F),
-                                        minHeight: 10, // Reduzindo a altura da barra
+                                        minHeight: 10,
                                       ),
                                     ),
                                   ),
@@ -577,32 +515,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   Text(
                                     'Nível ${userProfile.profileData.currentLevel} - Progresso de pegada de carbono',
                                     style: const TextStyle(
-                                      fontSize: 9, // Reduzindo o tamanho da fonte
+                                      fontSize: 9,
                                       color: Colors.grey,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8), // Reduzindo o espaçamento
-                            // Ícone de level com tamanho reduzido
+                            const SizedBox(width: 8),
                             userProfile.profileData.currentLevelUrl != null
                                 ? Image.network(
                                     userProfile.profileData.currentLevelUrl!,
-                                    width: 28, // Reduzindo o tamanho
-                                    height: 28, // Reduzindo o tamanho
+                                    width: 28,
+                                    height: 28,
                                     errorBuilder: (context, error, stackTrace) {
                                       return Icon(
                                         Icons.nature,
                                         color: Colors.green[400],
-                                        size: 28, // Reduzindo o tamanho
+                                        size: 28,
                                       );
                                     },
                                   )
                                 : Icon(
                                     Icons.nature,
                                     color: Colors.green[400],
-                                    size: 28, // Reduzindo o tamanho
+                                    size: 28,
                                   ),
                           ],
                         ),
@@ -611,9 +548,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ),
                 ],
               ),
-              const SizedBox(height: 14), // Reduzindo o espaçamento
+              const SizedBox(height: 14),
               
-              // Estatísticas do usuário - em três colunas
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -678,38 +614,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget _buildRouteCard(RouteData route) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
     
-    // Create Google Maps static URL for the route
     String mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?size=600x200&maptype=roadmap';
     
-    // Add API key if you have one
     mapUrl += '&key=${AppConfig.googleMapsApiKey}';
     
     if (route.routePoints.isNotEmpty) {
-      // Create path string from route points
-      final pathPoints = route.routePoints.map((point) {
-        // Handle different possible formats of route points
-        double? lat, lng;
-        
-        if (point is Map) {
-          lat = point['latitude'] is double ? point['latitude'] : double.tryParse(point['latitude'].toString());
-          lng = point['longitude'] is double ? point['longitude'] : double.tryParse(point['longitude'].toString());
-        } else if (point is dynamic && point.latitude != null && point.longitude != null) {
-          lat = point.latitude is double ? point.latitude : double.tryParse(point.latitude.toString());
-          lng = point.longitude is double ? point.longitude : double.tryParse(point.longitude.toString());
-        }
-        
-        if (lat != null && lng != null) {
-          return '$lat,$lng';
-        }
-        return '';
-      }).where((point) => point.isNotEmpty).join('|');
+      final pathPoints = route.routePoints.values.map((point) {
+        return '${point.latitude},${point.longitude}';
+      }).join('|');
       
-      // Add path if we have points
       if (pathPoints.isNotEmpty) {
-        // Add path to map URL with blue color and weight 5
         mapUrl += '&path=color:0x0000ff|weight:5|$pathPoints';
         
-        // Add markers for start and end points
         final points = pathPoints.split('|');
         if (points.length >= 2) {
           mapUrl += '&markers=color:green|label:I|${points.first}';
@@ -717,7 +633,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       }
     } else {
-      // Fallback to center view if no path points
       mapUrl += '&center=São+Paulo&zoom=13';
     }
     
@@ -741,18 +656,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Mapa na parte superior
           ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(16.5),
               topRight: Radius.circular(16.5),
             ),
             child: Container(
-              height: 130, // Reduzindo a altura do mapa
+              height: 130,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Mapa
                   Image.network(
                     mapUrl,
                     fit: BoxFit.cover,
@@ -780,7 +693,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     },
                   ),
                   
-                  // Badge do veículo no canto superior esquerdo
                   Positioned(
                     top: 12,
                     left: 12,
@@ -808,7 +720,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     ),
                   ),
                   
-                  // Badge de distância no canto superior direito
                   Positioned(
                     top: 12,
                     right: 12,
@@ -842,7 +753,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     ),
                   ),
                   
-                  // Google Maps attribution
                   Positioned(
                     bottom: 0,
                     right: 0,
@@ -860,17 +770,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
           ),
           
-          // Conteúdo abaixo do mapa
           Padding(
-            padding: const EdgeInsets.all(12.0), // Reduzindo o padding
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Data e hora
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Coluna de início
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -892,14 +799,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       ],
                     ),
                     
-                    // Ícone de seta
                     Icon(
                       Icons.arrow_forward,
                       color: Colors.grey[400],
                       size: 16,
                     ),
                     
-                    // Coluna de fim
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -923,9 +828,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ],
                 ),
                 
-                const SizedBox(height: 12), // Reduzindo o espaçamento
+                const SizedBox(height: 12),
                 
-                // Linha divisória com gradiente
                 Container(
                   height: 1,
                   decoration: BoxDecoration(
@@ -939,51 +843,45 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ),
                 ),
                 
-                const SizedBox(height: 10), // Reduzindo o espaçamento
+                const SizedBox(height: 10),
                 
-                // Métricas
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    // Pegada de carbono
                     _buildMetricItem(
                       icon: Icons.eco,
                       iconColor: Colors.teal,
                       label: 'Pegada',
                       value: '${route.carbonFootprint}kg',
-                      fontSize: 15, // Reduzindo o tamanho da fonte
+                      fontSize: 15,
                     ),
                     
-                    // Linha vertical divisória
                     Container(
                       height: 30,
                       width: 1,
                       color: Colors.grey.withOpacity(0.2),
                     ),
                     
-                    // Velocidade média
                     _buildMetricItem(
                       icon: Icons.speed,
                       iconColor: Colors.blue,
                       label: 'Velocidade',
                       value: '${route.velocityAverage}km/h',
-                      fontSize: 15, // Reduzindo o tamanho da fonte
+                      fontSize: 15,
                     ),
                     
-                    // Linha vertical divisória
                     Container(
                       height: 30,
                       width: 1,
                       color: Colors.grey.withOpacity(0.2),
                     ),
                     
-                    // Pontos
                     _buildMetricItem(
                       icon: Icons.star,
                       iconColor: Colors.amber,
                       label: 'Pontos',
                       value: '${route.points}',
-                      fontSize: 15, // Reduzindo o tamanho da fonte
+                      fontSize: 15,
                     ),
                   ],
                 ),

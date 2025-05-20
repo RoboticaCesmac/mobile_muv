@@ -13,15 +13,12 @@ import 'token_manager.dart';
 class AuthService {
   String get baseUrl => EnvironmentConfig.baseUrl;
 
-  // Método para salvar o token no dispositivo
   Future<void> _saveToken(String token, String tokenType, int expiresIn) async {
-    // Salva o token usando o TokenManager para acesso global
     await TokenManager.setToken(token);
     await TokenManager.setTokenType(tokenType);
     await TokenManager.setExpiresIn(expiresIn);
   }
 
-  // Login
   Future<void> login({
     required String email,
     required String password,
@@ -41,27 +38,22 @@ class AuthService {
       print(Uri.parse('$baseUrl/auth/login-mobile'));
       print('----------------------------------');
       if (response.statusCode == 200) {
-        // Decodifica a resposta JSON
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         
-        // Extrai os dados da resposta
         final String token = responseData['access_token'];
         final String tokenType = responseData['token_type'];
         final int expiresIn = responseData['expires_in'];
         final bool isFirstLogin = responseData['is_first_login'] ?? false;
         
-        // Salva o token
         await _saveToken(token, tokenType, expiresIn);
         
         if (context.mounted) {
           if (isFirstLogin) {
-            // Navega para a página de seleção de veículo para o primeiro login
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => const VehicleSelectionPage()),
               (route) => false,
             );
           } else {
-            // Navega para a HomePage para usuários que já completaram o onboarding
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => const HomePage()),
               (route) => false,
@@ -137,7 +129,6 @@ class AuthService {
     }
   }
 
-  // Envio do token para redefinição de senha
   Future<void> sendPasswordResetToken({
     required String email,
     required BuildContext context,
@@ -153,7 +144,6 @@ class AuthService {
       print(response.body);
       if (response.statusCode == 200) {
         if (context.mounted) {
-          // Navega para a tela de confirmação de token para reset de senha
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ResetPasswordTokenPage(
@@ -201,7 +191,6 @@ class AuthService {
 
       if (response.statusCode == 200) {
         if (context.mounted) {
-          // Navega para a tela de nova senha
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => NewPasswordPage(
@@ -233,7 +222,6 @@ class AuthService {
     }
   }
 
-  // Registro com token
   Future<void> register({
     required String email,
     required String password,
@@ -290,7 +278,6 @@ class AuthService {
     }
   }
 
-  // Redefinição de senha com token
   Future<void> resetPassword({
     required String email,
     required String password,
@@ -317,7 +304,6 @@ class AuthService {
               backgroundColor: Colors.green,
             ),
           );
-          // Navega para a tela de login e remove todas as rotas anteriores
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoginPage()),
             (route) => false,

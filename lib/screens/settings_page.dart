@@ -462,6 +462,13 @@ class _SettingsPageState extends State<SettingsPage> {
       await _userService.deleteAccount();
       if (!mounted) return;
       
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Conta excluída com sucesso!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginPage()),
         (route) => false,

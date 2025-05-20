@@ -78,14 +78,12 @@ class _TokenConfirmationPageState extends State<TokenConfirmationPage> {
     });
 
     if (widget.isPasswordReset) {
-      // Fluxo de redefinição de senha
       await _authService.confirmResetPasswordToken(
         email: widget.email,
         token: token,
         context: context,
       );
     } else {
-      // Fluxo de registro
       await _authService.register(
         email: widget.email,
         password: widget.password,

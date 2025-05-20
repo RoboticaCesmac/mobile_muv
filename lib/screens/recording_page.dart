@@ -41,12 +41,10 @@ class _RecordingPageState extends State<RecordingPage> {
   bool _showOfflineIndicator = false;
   int _offlineSavedPoints = 0;
   
-  // Variáveis para monitorar conectividade
   final Connectivity _connectivity = Connectivity();
   bool _isOnline = true;
   bool _isSyncing = false;
   
-  // Variáveis para mostrar status da sincronização
   List<SyncStatus> _syncStatusList = [];
   bool _showSyncPanel = false;
 
@@ -61,35 +59,29 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   Future<void> _initConnectivityListener() async {
-    // Verificação inicial de conectividade
-    await _checkConnectivity();
+    await _updateConnectivityStatus();
     
-    // Verificar a cada 3 segundos
     Timer.periodic(const Duration(seconds: 3), (_) {
       if (mounted) {
-        _checkConnectivity();
+        _updateConnectivityStatus();
       }
     });
   }
   
-  Future<void> _checkConnectivity() async {
+  Future<void> _updateConnectivityStatus() async {
     try {
-      final result = await _connectivity.checkConnectivity();
-      final bool isNowOnline = result != ConnectivityResult.none;
-      final bool wasOffline = !_isOnline;
+      var connectivityResult = await _connectivity.checkConnectivity();
+      bool wasOffline = !_isOnline;
+      bool isNowOnline = connectivityResult != ConnectivityResult.none;
       
       if (wasOffline && isNowOnline) {
-        // Mudou de offline para online
         print('Conectividade restaurada: OFFLINE -> ONLINE');
         if (mounted) {
           setState(() {
             _isOnline = true;
           });
-          // Tenta sincronizar após confirmar que está online
-          _syncOfflineRoutes();
         }
       } else if (!isNowOnline && _isOnline) {
-        // Mudou de online para offline
         print('Conectividade perdida: ONLINE -> OFFLINE');
         if (mounted) {
           setState(() {
@@ -102,125 +94,10 @@ class _RecordingPageState extends State<RecordingPage> {
     }
   }
   
-  Future<void> _syncOfflineRoutes() async {
-    // Verifica se já está sincronizando para evitar múltiplas sincronizações
-    if (_isSyncing) {
-      print('Sincronização já em andamento, ignorando nova solicitação');
-      return;
-    }
-
-    // Verificar se existem pontos para sincronizar
-    await _updateOfflinePointsCount();
-    if (_offlineSavedPoints <= 0) {
-      print('Nenhum ponto para sincronizar');
-      return;
-    }
-    
-    print('Iniciando sincronização de $_offlineSavedPoints pontos');
-    
-    setState(() {
-      _isSyncing = true;
-      _showSyncPanel = true;
-      _syncStatusList = []; // Limpa lista de status
-    });
-    
-    try {
-      bool syncResult = await _routeRecordingService.syncOfflineRoutes(
-        onPointSync: (success, routeIndex, pointIndex, totalPoints) {
-          if (mounted) {
-            print('Sincronizando ponto $pointIndex/$totalPoints da rota $routeIndex - ${success ? 'sucesso' : 'falha'}');
-            setState(() {
-              _syncStatusList.add(SyncStatus(
-                success: success,
-                routeIndex: routeIndex,
-                pointIndex: pointIndex,
-                totalPoints: totalPoints,
-                message: success 
-                  ? 'Ponto ${pointIndex + 1}/$totalPoints da rota ${routeIndex + 1} sincronizado'
-                  : 'Falha ao sincronizar ponto ${pointIndex + 1}/$totalPoints da rota ${routeIndex + 1}',
-              ));
-              
-              // Limita a quantidade de mensagens visíveis
-              if (_syncStatusList.length > 5) {
-                _syncStatusList.removeAt(0);
-              }
-            });
-          }
-        },
-        onRouteComplete: (success, routeIndex) {
-          if (mounted) {
-            print('Rota $routeIndex ${success ? 'sincronizada com sucesso' : 'falhou ao sincronizar'}');
-            setState(() {
-              _syncStatusList.add(SyncStatus(
-                success: success,
-                routeIndex: routeIndex,
-                pointIndex: -1,
-                totalPoints: -1,
-                message: success 
-                  ? 'Rota ${routeIndex + 1} sincronizada com sucesso!'
-                  : 'Falha ao finalizar rota ${routeIndex + 1}',
-                isRouteComplete: true,
-              ));
-              
-              // Limita a quantidade de mensagens visíveis
-              if (_syncStatusList.length > 5) {
-                _syncStatusList.removeAt(0);
-              }
-            });
-          }
-        },
-      );
-      
-      print('Sincronização concluída: ${syncResult ? 'Sucesso' : 'Falha'}');
-      
-      // Atualiza o status de pontos offline imediatamente
-      await _updateOfflinePointsCount();
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(syncResult 
-              ? 'Sincronização concluída com sucesso!'
-              : 'Houve problemas durante a sincronização.'
-            ),
-            backgroundColor: syncResult ? Colors.green : Colors.orange,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      print('Erro durante a sincronização: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro durante a sincronização: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } finally {
-      // Atualiza o contador novamente para garantir precisão
-      await _updateOfflinePointsCount();
-      
-      // Aguarda 5 segundos antes de esconder o painel de sincronização
-      Future.delayed(const Duration(seconds: 5), () {
-        if (mounted) {
-          setState(() {
-            _showSyncPanel = false;
-            _isSyncing = false;
-          });
-        }
-      });
-    }
-  }
-  
   Future<void> _updateOfflinePointsCount() async {
     try {
-      // Imprime informações detalhadas sobre as rotas para debug
       await RouteManager.debugPrintRouteInfo();
       
-      // Usa o novo método para contar pontos com precisão
       final totalPoints = await RouteManager.getTotalOfflinePointsCount();
       
       if (mounted) {
@@ -311,36 +188,30 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   Future<void> _checkPermissions() async {
-    // Verificar permissão de localização usando permission_handler
     ph.PermissionStatus status = await ph.Permission.location.status;
     
     if (status.isDenied) {
       status = await ph.Permission.location.request();
       if (status.isDenied) {
-        // Usuário negou a permissão, voltar para a home
         _navigateToHome();
         return;
       }
     }
     
     if (status.isPermanentlyDenied) {
-      // Permissão negada permanentemente, pedir para ir às configurações
       _showPermissionDeniedDialog();
       return;
     }
     
     if (!status.isGranted) {
-      // Por qualquer outro motivo não temos permissão, voltar para a home
       _navigateToHome();
       return;
     }
 
-    // Verificar se o serviço de localização está ativado
     bool serviceEnabled = await _location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await _location.requestService();
       if (!serviceEnabled) {
-        // O usuário não ativou o serviço de localização, voltar para a home
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Serviço de localização não está ativado.'),
@@ -352,7 +223,6 @@ class _RecordingPageState extends State<RecordingPage> {
       }
     }
     
-    // Chegando aqui, temos permissão e o serviço está ativado
     setState(() {
       _locationPermissionChecked = true;
     });
@@ -402,17 +272,14 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   void _initLocationTracking() {
-    // Configurar serviço de localização com alta precisão
     _location.changeSettings(
       accuracy: LocationAccuracy.high,
       interval: 500,
       distanceFilter: 2,
     );
     
-    // Obter localização atual
     _getCurrentLocation();
     
-    // Ouvir atualizações de localização
     _location.onLocationChanged.listen((LocationData locationData) async {
       if (!mounted) return;
       
@@ -424,26 +291,22 @@ class _RecordingPageState extends State<RecordingPage> {
           _updateMarker();
         });
         
-        // Se estiver rastreando, manter o mapa centralizado na posição atual e enviar ponto à API
         if (_isTracking && _controller != null) {
           _controller!.animateCamera(
             CameraUpdate.newLatLng(newPosition),
           );
           
-          // Usar o serviço modificado para adicionar pontos
           final result = await _routeRecordingService.addRoutePoint(
             latitude: newPosition.latitude,
             longitude: newPosition.longitude,
           );
           
-          // Verificar se o ponto foi salvo localmente
           if (result['savedLocally'] == true) {
             setState(() {
               _showOfflineIndicator = true;
               _offlineSavedPoints++;
             });
             
-            // Mostrar toast informando que o ponto foi salvo localmente
             if (mounted) {
               ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(
@@ -456,7 +319,6 @@ class _RecordingPageState extends State<RecordingPage> {
             }
           } else {
             if (_showOfflineIndicator) {
-              // Atualizar contagem de pontos offline
               _updateOfflinePointsCount();
             }
           }
@@ -595,21 +457,18 @@ class _RecordingPageState extends State<RecordingPage> {
     });
 
     try {
-      // Usa o serviço de rota melhorado que gerencia offline/online automaticamente
       final success = await _routeRecordingService.startRoute(
         vehicleId: _selectedVehicle!.id,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
       );
       
-      // Atualiza o status da rota após iniciar
       await _checkRouteStatus();
       
       setState(() {
         _isLoading = false;
       });
 
-      // Notifica o usuário que a rota foi iniciada
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -647,44 +506,94 @@ class _RecordingPageState extends State<RecordingPage> {
 
     setState(() {
       _isLoading = true;
+      _isSyncing = true;
+      _showSyncPanel = true;
+      _syncStatusList.clear();
     });
 
     try {
-      // Usa o serviço de rota melhorado que gerencia offline/online automaticamente
       final success = await _routeRecordingService.finishRoute(
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
+        onPointSync: (success, routeIndex, pointIndex, totalPoints) {
+          if (mounted) {
+            setState(() {
+              _syncStatusList.add(SyncStatus(
+                success: success,
+                routeIndex: routeIndex,
+                pointIndex: pointIndex,
+                totalPoints: totalPoints,
+                message: success 
+                  ? 'Ponto ${pointIndex + 1}/$totalPoints da rota ${routeIndex + 1} sincronizado'
+                  : 'Falha ao sincronizar ponto ${pointIndex + 1} da rota ${routeIndex + 1}',
+              ));
+              
+              if (_syncStatusList.length > 5) {
+                _syncStatusList.removeAt(0);
+              }
+            });
+          }
+        },
+        onRouteComplete: (success, routeIndex) {
+          if (mounted) {
+            setState(() {
+              _syncStatusList.add(SyncStatus(
+                success: success,
+                routeIndex: routeIndex,
+                pointIndex: -1,
+                totalPoints: -1,
+                message: success 
+                  ? 'Rota ${routeIndex + 1} sincronizada com sucesso!'
+                  : 'Falha ao finalizar rota ${routeIndex + 1}',
+                isRouteComplete: true,
+              ));
+              
+              if (_syncStatusList.length > 5) {
+                _syncStatusList.removeAt(0);
+              }
+            });
+          }
+        },
       );
       
-      // Atualiza o status da rota após finalizar
       await _checkRouteStatus();
+      
+      await _updateOfflinePointsCount();
       
       setState(() {
         _isLoading = false;
+        
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted) {
+            setState(() {
+              _showSyncPanel = false;
+              _isSyncing = false;
+            });
+          }
+        });
       });
 
-      // Notifica o usuário que a rota foi finalizada
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(success 
-              ? 'Rota finalizada com sucesso!' 
-              : 'Houve um problema ao finalizar a rota.'),
-            backgroundColor: success ? Colors.green : Colors.orange,
-            duration: const Duration(seconds: 3),
+          const SnackBar(
+            content: Text('Rota finalizada com sucesso!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
           ),
         );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
+        _isSyncing = false;
+        _showSyncPanel = false;
       });
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro ao finalizar a rota.'),
+        SnackBar(
+          content: Text('Erro ao finalizar a rota: $e'),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -766,21 +675,6 @@ class _RecordingPageState extends State<RecordingPage> {
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
         titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-        actions: [
-          // Botão para forçar sincronização
-          if (_isOnline && _offlineSavedPoints > 0 && !_isSyncing)
-            IconButton(
-              icon: const Icon(Icons.sync, color: Colors.white),
-              tooltip: 'Sincronizar pontos',
-              onPressed: _syncOfflineRoutes,
-            ),
-          // Botão para limpar dados (debug)
-          IconButton(
-            icon: const Icon(Icons.delete_forever, color: Colors.white),
-            tooltip: 'Limpar dados',
-            onPressed: _clearAllRouteData,
-          ),
-        ],
       ),
       body: Stack(
         children: [
@@ -800,78 +694,6 @@ class _RecordingPageState extends State<RecordingPage> {
             },
           ),
           
-          // Indicador de modo offline
-          if (_showOfflineIndicator)
-            Positioned(
-              top: 20,
-              left: 0,
-              right: 0,
-              child: GestureDetector(
-                onTap: _isOnline && !_isSyncing && _offlineSavedPoints > 0 
-                    ? _syncOfflineRoutes 
-                    : null,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _isSyncing 
-                            ? Icons.sync 
-                            : (_isOnline ? Icons.cloud_upload : Icons.wifi_off),
-                          color: Colors.white, 
-                          size: 16
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _isSyncing
-                            ? 'Sincronizando pontos...'
-                            : (_isOnline 
-                                ? '$_offlineSavedPoints pontos aguardando sincronização'
-                                : '$_offlineSavedPoints pontos salvos localmente'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (_isOnline && _offlineSavedPoints > 0 && !_isSyncing)
-                          GestureDetector(
-                            onTap: _syncOfflineRoutes,
-                            child: Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.sync,
-                                color: Colors.orange,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          
-          // Painel de sincronização
           if (_showSyncPanel && _syncStatusList.isNotEmpty)
             Positioned(
               bottom: 100,
@@ -945,7 +767,6 @@ class _RecordingPageState extends State<RecordingPage> {
               ),
             ),
             
-          // Botão do veículo reposicionado e redesenhado
           Positioned(
             right: 16,
             top: 16,
@@ -1036,68 +857,8 @@ class _RecordingPageState extends State<RecordingPage> {
     _controller?.dispose();
     super.dispose();
   }
-
-  // Método para limpar todos os dados de rota (usado para debug)
-  Future<void> _clearAllRouteData() async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Limpar todas as rotas?'),
-        content: const Text('Isso irá remover todos os pontos salvos localmente. Esta operação não pode ser desfeita.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              
-              setState(() {
-                _isLoading = true;
-              });
-              
-              try {
-                await RouteManager.clearAllRouteData();
-                await _updateOfflinePointsCount();
-                
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Dados de rotas limpos com sucesso'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                print('Erro ao limpar dados de rotas: $e');
-                
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Erro ao limpar dados: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              } finally {
-                if (mounted) {
-                  setState(() {
-                    _isLoading = false;
-                  });
-                }
-              }
-            },
-            child: const Text('Limpar'),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-/// Classe auxiliar para armazenar status de sincronização
 class SyncStatus {
   final bool success;
   final int routeIndex;

@@ -217,60 +217,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         : const Text('Cadastrar'),
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.only(bottom: 24),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          color: Colors.grey[300],
-                          thickness: 1,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'Ou',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          color: Colors.grey[300],
-                          thickness: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // Implementar cadastro com Google
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.grey[300]!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/google_logo.png',
-                          height: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('Continuar com Google'),
-                      ],
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

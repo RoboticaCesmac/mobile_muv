@@ -73,7 +73,6 @@ class _ResetPasswordTokenPageState extends State<ResetPasswordTokenPage> {
       _isLoading = true;
     });
 
-    // Fluxo de redefinição de senha
     await _authService.confirmResetPasswordToken(
       email: widget.email,
       token: token,

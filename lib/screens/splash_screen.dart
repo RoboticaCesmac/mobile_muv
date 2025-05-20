@@ -19,16 +19,13 @@ class _SplashScreenState extends State<SplashScreen> {
     Timer(
       const Duration(seconds: 2),
       () {
-        // Verifica se existe um token salvo
         if (TokenManager.hasToken()) {
-          // Se existir, vai para a HomePage
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => const HomePage(),
             ),
           );
         } else {
-          // Se não existir, vai para a LoginPage
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => const LoginPage(),
@@ -42,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF004341), // #004341 em hex
+      backgroundColor: const Color(0xFF004341),
       body: Center(
         child: Image.asset(
           'assets/LogoMarcaBranca.png',

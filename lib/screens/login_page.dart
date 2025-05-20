@@ -237,64 +237,6 @@ class _LoginPageState extends State<LoginPage> {
                         : const Text('Entrar'),
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.only(bottom: 24),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          color: Colors.grey[300],
-                          thickness: 1,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'Ou',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          color: Colors.grey[300],
-                          thickness: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(bottom: 24),
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // Implementar login com Google
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: BorderSide(color: Colors.grey[300]!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/google_logo.png',
-                          height: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Continuar com Google',
-                          style: textTheme.bodyLarge,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
                 Center(
                   child: TextButton(
                     onPressed: () {

@@ -7,7 +7,6 @@ import 'token_manager.dart';
 class UserService {
   final ApiClient _apiClient = ApiClient();
 
-  // Buscar avatares de usuário disponíveis
   Future<List<UserAvatar>> getUserAvatars() async {
     try {
       final response = await _apiClient.get('mobile/avatar/all');
@@ -25,7 +24,6 @@ class UserService {
     }
   }
 
-  // Completar primeiro login do usuário
   Future<bool> completeFirstLogin({
     required String userName,
     required String gender,
@@ -51,7 +49,6 @@ class UserService {
     }
   }
 
-  // Fazer logout do usuário
   Future<void> logout() async {
     try {
       await _apiClient.post('mobile/auth/logout');
@@ -61,7 +58,6 @@ class UserService {
     }
   }
 
-  // Excluir conta do usuário
   Future<void> deleteAccount() async {
     try {
       final response = await _apiClient.delete('mobile/user');

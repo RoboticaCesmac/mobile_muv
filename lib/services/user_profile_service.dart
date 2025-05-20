@@ -7,7 +7,6 @@ import '../config/environment_config.dart';
 class UserProfileService {
   String get baseUrl => EnvironmentConfig.baseUrl;
 
-  /// Busca os dados do perfil do usuário logado
   Future<UserProfile?> getUserProfile() async {
     try {
       final headers = {
@@ -19,11 +18,7 @@ class UserProfileService {
         Uri.parse('$baseUrl/auth/me'),
         headers: headers,
       );
-      print('----------------------------------');
-      print(Uri.parse('$baseUrl/auth/me'));
-      print('----------------------------------');
-      print(response.body);
-      print('----------------------------------');
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         return UserProfile.fromJson(data);
@@ -31,7 +26,6 @@ class UserProfileService {
         throw Exception('Falha ao buscar perfil: ${response.statusCode}');
       }
     } catch (e) {
-      print('Erro ao buscar perfil do usuário: $e');
       return null;
     }
   }

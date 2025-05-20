@@ -29,7 +29,6 @@ class RouteManager {
   static const String _offlineRoutesKey = 'offline_routes';
   static const String _currentRouteKey = 'current_route';
 
-  // Armazena um novo ponto na rota atual
   static Future<void> addPointToCurrentRoute(double latitude, double longitude) async {
     final prefs = await SharedPreferences.getInstance();
     final currentRoute = prefs.getStringList(_currentRouteKey) ?? [];
@@ -44,7 +43,6 @@ class RouteManager {
     await prefs.setStringList(_currentRouteKey, currentRoute);
   }
 
-  // Finaliza a rota atual e a move para a lista de rotas offline
   static Future<void> finishCurrentRoute() async {
     final prefs = await SharedPreferences.getInstance();
     final currentRoute = prefs.getStringList(_currentRouteKey) ?? [];
@@ -57,7 +55,6 @@ class RouteManager {
     }
   }
 
-  // Obtém a rota atual
   static Future<List<RoutePoint>> getCurrentRoute() async {
     final prefs = await SharedPreferences.getInstance();
     final currentRoute = prefs.getStringList(_currentRouteKey) ?? [];
@@ -68,7 +65,6 @@ class RouteManager {
     }).toList();
   }
 
-  // Obtém todas as rotas offline
   static Future<List<List<RoutePoint>>> getOfflineRoutes() async {
     final prefs = await SharedPreferences.getInstance();
     final offlineRoutes = prefs.getStringList(_offlineRoutesKey) ?? [];
@@ -82,7 +78,6 @@ class RouteManager {
     }).toList();
   }
 
-  // Remove uma rota offline após sincronização bem-sucedida
   static Future<void> removeOfflineRoute(int index) async {
     final prefs = await SharedPreferences.getInstance();
     final offlineRoutes = prefs.getStringList(_offlineRoutesKey) ?? [];
@@ -93,27 +88,22 @@ class RouteManager {
     }
   }
 
-  // Limpa todas as rotas offline
   static Future<void> clearAllOfflineRoutes() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_offlineRoutesKey);
   }
 
-  // Limpa a rota atual
   static Future<void> clearCurrentRoute() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_currentRouteKey);
   }
 
-  // Limpa todas as rotas armazenadas (atual e offline)
   static Future<void> clearAllRouteData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_currentRouteKey);
     await prefs.remove(_offlineRoutesKey);
-    print('Todos os dados de rotas foram limpos');
   }
 
-  // Retorna o número total de pontos armazenados (atual + offline)
   static Future<int> getTotalOfflinePointsCount() async {
     final prefs = await SharedPreferences.getInstance();
     final currentRoute = prefs.getStringList(_currentRouteKey) ?? [];
@@ -126,39 +116,28 @@ class RouteManager {
         final List<dynamic> routeList = jsonDecode(routeJson);
         totalPoints += routeList.length;
       } catch (e) {
-        print('Erro ao contar pontos de rota offline: $e');
       }
     }
     
-    print('Total de pontos salvos localmente: $totalPoints');
     return totalPoints;
   }
 
-  // Debugging: imprime informações detalhadas sobre as rotas offline
   static Future<void> debugPrintRouteInfo() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final currentRoute = prefs.getStringList(_currentRouteKey) ?? [];
       final offlineRoutes = prefs.getStringList(_offlineRoutesKey) ?? [];
       
-      print('===== DEBUG: INFO DE ROTAS =====');
-      print('Rota atual: ${currentRoute.length} pontos');
-      print('Rotas offline: ${offlineRoutes.length} rotas');
-      
       int i = 0;
       for (var routeJson in offlineRoutes) {
         try {
           final List<dynamic> routeList = jsonDecode(routeJson);
-          print('  Rota #$i: ${routeList.length} pontos');
           i++;
         } catch (e) {
-          print('  Erro ao decodificar rota #$i: $e');
           i++;
         }
       }
-      print('================================');
     } catch (e) {
-      print('Erro ao imprimir info de rotas: $e');
     }
   }
 } 

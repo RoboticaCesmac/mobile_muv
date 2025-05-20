@@ -6,7 +6,6 @@ import 'api_client.dart';
 class VehicleService {
   final ApiClient _apiClient = ApiClient();
 
-  // Buscar veículos
   Future<List<Vehicle>> getVehicles() async {
     try {
       final response = await _apiClient.get('mobile/vehicle/all');
@@ -24,7 +23,6 @@ class VehicleService {
     }
   }
 
-  // Atualizar veículo do usuário
   Future<bool> updateUserVehicle(int vehicleId) async {
     try {
       final response = await _apiClient.patch(

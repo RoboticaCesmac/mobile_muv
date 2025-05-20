@@ -7,7 +7,6 @@ import 'api_client.dart';
 class AvatarService {
   final ApiClient _apiClient = ApiClient();
 
-  // Buscar avatares de usuário disponíveis
   Future<List<UserAvatar>> getUserAvatars() async {
     try {
       final response = await _apiClient.get('mobile/avatar/all');
@@ -25,7 +24,6 @@ class AvatarService {
     }
   }
 
-  // Atualizar avatar do usuário
   Future<bool> updateUserAvatar(int avatarId) async {
     try {
       final response = await _apiClient.patch(
@@ -35,7 +33,6 @@ class AvatarService {
         },
       );
 
-      // Se o status code for 200, consideramos como sucesso
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Erro ao atualizar avatar: $e');

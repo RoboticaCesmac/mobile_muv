@@ -12,7 +12,7 @@ class RouteData {
   final DateTime endedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final List<dynamic> routePoints;
+  final Map<String, RoutePoint> routePoints;
   final Vehicle vehicle;
 
   RouteData({
@@ -33,19 +33,17 @@ class RouteData {
 
   factory RouteData.fromJson(Map<String, dynamic> json) {
     // Parse route points
-    List<dynamic> parsedRoutePoints = [];
-    if (json['route_points'] != null) {
-      parsedRoutePoints = (json['route_points'] as List).map((point) {
-        if (point is Map<String, dynamic>) {
+    Map<String, RoutePoint> parsedRoutePoints = {};
+    if (json['route_points'] != null && json['route_points'] is Map) {
+      (json['route_points'] as Map).forEach((key, value) {
+        if (value is Map<String, dynamic>) {
           try {
-            return RoutePoint.fromJson(point);
+            parsedRoutePoints[key.toString()] = RoutePoint.fromJson(value);
           } catch (e) {
             print('Error parsing route point: $e');
-            return point;
           }
         }
-        return point;
-      }).toList();
+      });
     }
     
     // Função auxiliar para converter qualquer valor para num de forma segura

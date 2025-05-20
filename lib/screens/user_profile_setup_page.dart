@@ -134,7 +134,6 @@ class _UserProfileSetupPageState extends State<UserProfileSetupPage> {
       _isLoading = true;
     });
 
-    // Mapeando o valor em português para o valor esperado pela API
     final String apiGenderValue = _selectedGender;
 
     try {
@@ -279,8 +278,6 @@ class _UserProfileSetupPageState extends State<UserProfileSetupPage> {
                   activeColor: const Color(0xFF18694F),
                 ),
                 const SizedBox(height: 24),
-                
-                // Data de nascimento
                 Text(
                   'Data de Nascimento',
                   style: textTheme.titleMedium?.copyWith(
@@ -455,7 +452,6 @@ class _UserProfileSetupPageState extends State<UserProfileSetupPage> {
                 ),
                 const SizedBox(height: 32),
                 
-                // Botão de confirmar
                 ElevatedButton(
                   onPressed: _isLoading ? null : _completeProfile,
                   style: ElevatedButton.styleFrom(
