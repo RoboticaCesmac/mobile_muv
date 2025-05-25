@@ -44,6 +44,7 @@ class _RecordingPageState extends State<RecordingPage> {
   final Connectivity _connectivity = Connectivity();
   bool _isOnline = true;
   bool _isSyncing = false;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   
   List<SyncStatus> _syncStatusList = [];
   bool _showSyncPanel = false;
@@ -61,9 +62,13 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _initConnectivityListener() async {
     await _updateConnectivityStatus();
     
-    Timer.periodic(const Duration(seconds: 3), (_) {
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
       if (mounted) {
-        _updateConnectivityStatus();
+        final isNowOnline = !results.contains(ConnectivityResult.none);
+        setState(() {
+          _isOnline = isNowOnline;
+          print('Conectividade alterada: ${_isOnline ? 'ONLINE' : 'OFFLINE'}');
+        });
       }
     });
   }
@@ -71,23 +76,11 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _updateConnectivityStatus() async {
     try {
       var connectivityResult = await _connectivity.checkConnectivity();
-      bool wasOffline = !_isOnline;
-      bool isNowOnline = connectivityResult != ConnectivityResult.none;
-      
-      if (wasOffline && isNowOnline) {
-        print('Conectividade restaurada: OFFLINE -> ONLINE');
-        if (mounted) {
-          setState(() {
-            _isOnline = true;
-          });
-        }
-      } else if (!isNowOnline && _isOnline) {
-        print('Conectividade perdida: ONLINE -> OFFLINE');
-        if (mounted) {
-          setState(() {
-            _isOnline = false;
-          });
-        }
+      if (mounted) {
+        setState(() {
+          _isOnline = connectivityResult != ConnectivityResult.none;
+          print('Status inicial de conectividade: ${_isOnline ? 'ONLINE' : 'OFFLINE'}');
+        });
       }
     } catch (e) {
       print('Erro ao verificar conectividade: $e');
@@ -694,6 +687,22 @@ class _RecordingPageState extends State<RecordingPage> {
             },
           ),
           
+          if (!_isOnline)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                color: Colors.red,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: const Text(
+                  'Você está offline. Não é possível iniciar ou parar rotas.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+            
           if (_showSyncPanel && _syncStatusList.isNotEmpty)
             Positioned(
               bottom: 100,
@@ -835,25 +844,28 @@ class _RecordingPageState extends State<RecordingPage> {
             child: CircularProgressIndicator(color: Colors.white),
           )
         : FloatingActionButton.extended(
-            onPressed: (_canStart && !_isTracking) || (_canFinish && _isTracking) 
-              ? _handleButtonPress 
-              : null,
+            onPressed: (!_isOnline || !(_canStart && !_isTracking) && !(_canFinish && _isTracking))
+              ? null 
+              : _handleButtonPress,
             icon: Icon(_isTracking ? Icons.stop : Icons.play_arrow, color: Colors.white),
             label: Text(
               _isTracking ? 'Parar' : 'Iniciar',
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
-            backgroundColor: _isTracking 
-              ? Colors.red 
-              : _canStart 
-                ? Theme.of(context).primaryColor 
-                : Colors.grey,
+            backgroundColor: !_isOnline
+              ? Colors.grey
+              : _isTracking 
+                ? Colors.red 
+                : _canStart 
+                  ? Theme.of(context).primaryColor 
+                  : Colors.grey,
           ),
     );
   }
   
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     _controller?.dispose();
     super.dispose();
   }
