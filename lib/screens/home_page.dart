@@ -612,7 +612,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _buildRouteCard(RouteData route) {
-    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm', 'pt_BR');
+    
+    String formatDateTime(DateTime dateTime) {
+      // Garantindo que a data está no timezone local
+      final localDateTime = dateTime.toLocal();
+      return dateFormat.format(localDateTime);
+    }
     
     String mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?size=600x200&maptype=roadmap';
     
@@ -790,7 +796,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          dateFormat.format(route.startedAt),
+                          formatDateTime(route.startedAt),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
@@ -817,7 +823,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          dateFormat.format(route.endedAt),
+                          formatDateTime(route.endedAt),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
