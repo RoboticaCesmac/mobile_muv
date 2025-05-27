@@ -330,4 +330,33 @@ class AuthService {
       }
     }
   }
+
+  Future<bool> verifyToken() async {
+    try {
+      final token = TokenManager.getToken();
+      if (token == null) return false;
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          ...TokenManager.getAuthHeader(),
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> logout(BuildContext context) async {
+    await TokenManager.clearToken();
+    if (context.mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false,
+      );
+    }
+  }
 } 

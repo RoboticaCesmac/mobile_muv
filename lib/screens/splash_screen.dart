@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'home_page.dart';
 import '../services/token_manager.dart';
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,28 +13,33 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final _authService = AuthService();
+
   @override
   void initState() {
     super.initState();
-    
-    Timer(
-      const Duration(seconds: 2),
-      () {
-        if (TokenManager.hasToken()) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const HomePage(),
-            ),
-          );
-        } else {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const LoginPage(),
-            ),
-          );
-        }
-      },
-    );
+    _checkAuthAndNavigate();
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    await Future.delayed(const Duration(seconds: 2)); // Tempo para mostrar a splash screen
+
+    if (!mounted) return;
+
+    if (TokenManager.hasToken()) {
+      final isValid = await _authService.verifyToken();
+      if (!isValid) {
+        await _authService.logout(context);
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    }
   }
 
   @override
