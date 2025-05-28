@@ -40,6 +40,7 @@ class _RecordingPageState extends State<RecordingPage> {
   bool _isLoadingVehicles = false;
   bool _showOfflineIndicator = false;
   int _offlineSavedPoints = 0;
+  int _locationUpdateCounter = 0;
   
   final Connectivity _connectivity = Connectivity();
   bool _isOnline = true;
@@ -289,31 +290,37 @@ class _RecordingPageState extends State<RecordingPage> {
             CameraUpdate.newLatLng(newPosition),
           );
           
-          final result = await _routeRecordingService.addRoutePoint(
-            latitude: newPosition.latitude,
-            longitude: newPosition.longitude,
-          );
+          _locationUpdateCounter++;
           
-          if (result['savedLocally'] == true) {
-            setState(() {
-              _showOfflineIndicator = true;
-              _offlineSavedPoints++;
-            });
+          if (_locationUpdateCounter >= 4) {
+            final result = await _routeRecordingService.addRoutePoint(
+              latitude: newPosition.latitude,
+              longitude: newPosition.longitude,
+            );
             
-            if (mounted) {
-              ScaffoldMessenger.of(context).clearSnackBars();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Ponto #$_offlineSavedPoints salvo localmente. Aguardando conexão.'),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 1),
-                ),
-              );
+            if (result['savedLocally'] == true) {
+              setState(() {
+                _showOfflineIndicator = true;
+                _offlineSavedPoints++;
+              });
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Ponto #$_offlineSavedPoints salvo localmente. Aguardando conexão.'),
+                    backgroundColor: Colors.orange,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              }
+            } else {
+              if (_showOfflineIndicator) {
+                _updateOfflinePointsCount();
+              }
             }
-          } else {
-            if (_showOfflineIndicator) {
-              _updateOfflinePointsCount();
-            }
+            
+            _locationUpdateCounter = 0;
           }
         }
       }
