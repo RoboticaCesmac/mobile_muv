@@ -1,5 +1,3 @@
-import 'package:intl/intl.dart';
-
 class RouteData {
   final int id;
   final int routeStatusId;
@@ -32,7 +30,7 @@ class RouteData {
   });
 
   factory RouteData.fromJson(Map<String, dynamic> json) {
-    // Parse route points
+
     Map<String, RoutePoint> parsedRoutePoints = {};
     if (json['route_points'] != null && json['route_points'] is Map) {
       (json['route_points'] as Map).forEach((key, value) {
@@ -46,7 +44,6 @@ class RouteData {
       });
     }
     
-    // Função auxiliar para converter qualquer valor para num de forma segura
     num toNum(dynamic value) {
       if (value == null) return 0;
       if (value is num) return value;
@@ -54,22 +51,13 @@ class RouteData {
       return 0;
     }
     
-    // Função auxiliar para converter data de forma segura
     DateTime toDateTime(dynamic value) {
       if (value == null) return DateTime.now();
       if (value is DateTime) return value;
-      if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (e) {
-          print('Error parsing date: $e');
-          return DateTime.now();
-        }
-      }
+      if (value is String) return DateTime.parse(value);
       return DateTime.now();
     }
     
-    // Safely parse vehicle
     Vehicle vehicleData;
     try {
       vehicleData = json['vehicle'] != null 
@@ -132,7 +120,6 @@ class RoutePoint {
   });
 
   factory RoutePoint.fromJson(Map<String, dynamic> json) {
-    // Função auxiliar para converter qualquer valor para num de forma segura
     num toNum(dynamic value) {
       if (value == null) return 0;
       if (value is num) return value;
@@ -140,7 +127,6 @@ class RoutePoint {
       return 0;
     }
     
-    // Função auxiliar para converter data de forma segura
     DateTime toDateTime(dynamic value) {
       if (value == null) return DateTime.now();
       if (value is DateTime) return value;
@@ -188,7 +174,6 @@ class Vehicle {
   });
 
   factory Vehicle.fromJson(Map<String, dynamic> json) {
-    // Função auxiliar para converter qualquer valor para num de forma segura
     num toNum(dynamic value) {
       if (value == null) return 0;
       if (value is num) return value;
@@ -196,7 +181,6 @@ class Vehicle {
       return 0;
     }
     
-    // Função auxiliar para converter data de forma segura
     DateTime toDateTime(dynamic value) {
       if (value == null) return DateTime.now();
       if (value is DateTime) return value;

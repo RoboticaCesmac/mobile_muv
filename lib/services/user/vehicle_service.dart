@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../models/vehicle.dart';
-import 'api_client.dart';
+import '../../models/vehicle.dart';
+import '../core/api_client.dart';
 
 class VehicleService {
   final ApiClient _apiClient = ApiClient();

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../models/user_avatar.dart';
 import '../models/vehicle.dart' as vehicle_model;
-import '../services/user_profile_service.dart';
-import '../services/avatar_service.dart';
-import '../services/vehicle_service.dart';
-import '../services/user_service.dart';
+import '../services/user/user_profile_service.dart';
+import '../services/user/avatar_service.dart';
+import '../services/user/vehicle_service.dart';
+import '../services/user/user_service.dart';
 import 'login_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -26,7 +26,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _userProfileFuture = _userProfileService.getUserProfile();
+    _userProfileFuture = _userProfileService.getUserProfile(period: 'all');
   }
 
   Future<void> _showAvatarSelectionDialog(UserProfile userProfile) async {
@@ -126,13 +126,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
           if (success) {
             setState(() {
-              _userProfileFuture = _userProfileService.getUserProfile();
+              _userProfileFuture = _userProfileService.getUserProfile(period: 'all');
             });
             
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Avatar atualizado com sucesso!'),
                 backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16),
               ),
             );
           } else {
@@ -140,6 +142,8 @@ class _SettingsPageState extends State<SettingsPage> {
               const SnackBar(
                 content: Text('Falha ao atualizar avatar'),
                 backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16),
               ),
             );
           }
@@ -149,6 +153,8 @@ class _SettingsPageState extends State<SettingsPage> {
             SnackBar(
               content: Text('Erro ao atualizar avatar: $e'),
               backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
             ),
           );
         } finally {
@@ -165,6 +171,8 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           content: Text('Erro ao carregar avatares: $e'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -354,13 +362,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
           if (success) {
             setState(() {
-              _userProfileFuture = _userProfileService.getUserProfile();
+              _userProfileFuture = _userProfileService.getUserProfile(period: 'all');
             });
             
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Veículo atualizado com sucesso!'),
                 backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16),
               ),
             );
           } else {
@@ -368,6 +378,8 @@ class _SettingsPageState extends State<SettingsPage> {
               const SnackBar(
                 content: Text('Falha ao atualizar veículo'),
                 backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16),
               ),
             );
           }
@@ -377,6 +389,8 @@ class _SettingsPageState extends State<SettingsPage> {
             SnackBar(
               content: Text('Erro ao atualizar veículo: $e'),
               backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
             ),
           );
         } finally {
@@ -393,6 +407,8 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           content: Text('Erro ao carregar veículos: $e'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -417,6 +433,8 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           content: Text('Erro ao fazer logout: $e'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
         ),
       );
     } finally {
@@ -466,6 +484,8 @@ class _SettingsPageState extends State<SettingsPage> {
         const SnackBar(
           content: Text('Conta excluída com sucesso!'),
           backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
         ),
       );
       
@@ -479,6 +499,8 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           content: Text('Erro ao excluir conta: $e'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
         ),
       );
     } finally {
@@ -660,6 +682,12 @@ class _SettingsPageState extends State<SettingsPage> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
+                                  _buildStatItem(
+                                    Icons.eco,
+                                    'Pegada de Carbono',
+                                    '${userProfile.profileData.totalCarbonFootprint} kg',
+                                    Colors.green,
+                                  ),
                                   // Total Points
                                   _buildStatItem(
                                     Icons.star,
@@ -674,14 +702,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'Distância Total',
                                     '${userProfile.profileData.distanceTraveled} km',
                                     Colors.blue,
-                                  ),
-                                  
-                                  // Carbon Footprint
-                                  _buildStatItem(
-                                    Icons.eco,
-                                    'Pegada de Carbono',
-                                    '${userProfile.profileData.totalCarbonFootprint} kg',
-                                    Colors.green,
                                   ),
                                 ],
                               ),

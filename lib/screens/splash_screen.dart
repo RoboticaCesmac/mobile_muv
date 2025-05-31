@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'home_page.dart';
-import '../services/token_manager.dart';
-import '../services/auth_service.dart';
+import '../services/auth/token_manager.dart';
+import '../services/auth/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

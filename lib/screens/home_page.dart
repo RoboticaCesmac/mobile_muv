@@ -1,15 +1,13 @@
-import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/user_profile.dart';
 import '../models/route_data.dart';
-import '../services/user_profile_service.dart';
-import '../services/route_service.dart';
+import '../services/user/user.dart';
+import '../services/route/route.dart';
 import '../screens/recording_page.dart';
 import '../screens/settings_page.dart';
 import '../config/app_config.dart';
-import '../services/connectivity_service.dart';
-import '../services/route_recording_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,8 +19,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final _userProfileService = UserProfileService();
   final _routeService = RouteService();
-  final _routeRecordingService = RouteRecordingService();
-  final _connectivityService = ConnectivityService();
   Future<UserProfile?>? _userProfileFuture;
   List<RouteData> _allRoutes = [];
   bool _isLoading = false;
@@ -553,6 +549,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
+                    _buildStatItem(
+                    Icons.eco,
+                    'Pegada',
+                    '${userProfile.profileData.totalCarbonFootprint}kg',
+                    Colors.teal,
+                    statIconSize: 16,
+                    fontSize: 14,
+                  ),
                   _buildStatItem(
                     Icons.star,
                     'Pontos',
@@ -566,14 +570,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     'Distância',
                     '${userProfile.profileData.distanceTraveled}km',
                     Colors.orange,
-                    statIconSize: 16,
-                    fontSize: 14,
-                  ),
-                  _buildStatItem(
-                    Icons.eco,
-                    'Pegada',
-                    '${userProfile.profileData.totalCarbonFootprint}kg',
-                    Colors.teal,
                     statIconSize: 16,
                     fontSize: 14,
                   ),

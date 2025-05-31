@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'token_manager.dart';
-import '../config/environment_config.dart';
+import '../auth/token_manager.dart';
+import '../../config/environment_config.dart';
 
 class ApiClient {
   String get baseUrl => EnvironmentConfig.baseUrl;

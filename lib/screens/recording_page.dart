@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
-import '../services/route_recording_service.dart';
-import '../services/user_profile_service.dart';
-import '../services/vehicle_service.dart';
-import '../services/route_manager.dart';
+import '../services/route/route_recording_service.dart';
+import '../services/user/user_profile_service.dart';
+import '../services/user/vehicle_service.dart';
+import '../services/route/route_manager.dart';
 import '../models/user_profile.dart' hide Vehicle;
 import '../models/vehicle.dart';
 import 'dart:developer' as developer;
@@ -579,6 +579,8 @@ class _RecordingPageState extends State<RecordingPage> {
             content: Text('Rota finalizada com sucesso!'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -594,6 +596,8 @@ class _RecordingPageState extends State<RecordingPage> {
           content: Text('Erro ao finalizar a rota: $e'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -608,6 +612,8 @@ class _RecordingPageState extends State<RecordingPage> {
           SnackBar(
             content: Text(_finishMessage),
             duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
           ),
         );
       }
@@ -619,6 +625,8 @@ class _RecordingPageState extends State<RecordingPage> {
           SnackBar(
             content: Text(_startMessage),
             duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
           ),
         );
       }

@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/splash_screen.dart';
-import 'services/token_manager.dart';
+import 'services/auth/token_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

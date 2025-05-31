@@ -1,8 +1,7 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../models/user_avatar.dart';
-import 'api_client.dart';
-import 'token_manager.dart';
+import '../../models/user_avatar.dart';
+import '../core/api_client.dart';
+import '../auth/token_manager.dart';
 
 class UserService {
   final ApiClient _apiClient = ApiClient();

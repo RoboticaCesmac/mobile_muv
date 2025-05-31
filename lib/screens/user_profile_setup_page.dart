@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../models/user_avatar.dart';
-import '../services/user_service.dart';
+import '../services/user/user_service.dart';
 import 'home_page.dart';
 
 class UserProfileSetupPage extends StatefulWidget {
@@ -105,6 +104,8 @@ class _UserProfileSetupPageState extends State<UserProfileSetupPage> {
         const SnackBar(
           content: Text('Por favor, insira seu nome'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
         ),
       );
       return;
@@ -115,6 +116,8 @@ class _UserProfileSetupPageState extends State<UserProfileSetupPage> {
         const SnackBar(
           content: Text('Por favor, selecione sua data de nascimento'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
         ),
       );
       return;
@@ -125,6 +128,8 @@ class _UserProfileSetupPageState extends State<UserProfileSetupPage> {
         const SnackBar(
           content: Text('Por favor, selecione um avatar'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
         ),
       );
       return;
@@ -157,6 +162,8 @@ class _UserProfileSetupPageState extends State<UserProfileSetupPage> {
           const SnackBar(
             content: Text('Erro ao completar o perfil'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -167,6 +174,8 @@ class _UserProfileSetupPageState extends State<UserProfileSetupPage> {
         SnackBar(
           content: Text('Erro: $e'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
         ),
       );
     } finally {

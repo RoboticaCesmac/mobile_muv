@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import '../screens/home_page.dart';
-import '../screens/token_confirmation_page.dart';
-import '../screens/login_page.dart';
-import '../screens/new_password_page.dart';
-import '../screens/reset_password_token_page.dart';
-import '../screens/vehicle_selection_page.dart';
-import '../config/environment_config.dart';
+import '../../screens/home_page.dart';
+import '../../screens/token_confirmation_page.dart';
+import '../../screens/login_page.dart';
+import '../../screens/new_password_page.dart';
+import '../../screens/reset_password_token_page.dart';
+import '../../screens/vehicle_selection_page.dart';
+import '../../config/environment_config.dart';
 import 'token_manager.dart';
+import '../../services/validation_error_handler.dart';
+import '../../models/api_error.dart';
 
 class AuthService {
   String get baseUrl => EnvironmentConfig.baseUrl;
@@ -19,7 +21,7 @@ class AuthService {
     await TokenManager.setExpiresIn(expiresIn);
   }
 
-  Future<void> login({
+  Future<ApiError?> login({
     required String email,
     required String password,
     required BuildContext context,
@@ -33,10 +35,10 @@ class AuthService {
           'password': password,
         }),
       );
-      print('123');
-      print('----------------------------------');
-      print(Uri.parse('$baseUrl/auth/login-mobile'));
-      print('----------------------------------');
+      
+      print('Login response status: ${response.statusCode}');
+      print('Login response body: ${response.body}');
+      
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         
@@ -60,15 +62,24 @@ class AuthService {
             );
           }
         }
+        return null;
       } else {
+        final apiError = ValidationErrorHandler.handleResponse(response, context);
+        if (apiError != null) {
+          return apiError;
+        }
+        
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Falha ao realizar login'),
               backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(16),
             ),
           );
         }
+        return null;
       }
     } catch (e) {
       if (context.mounted) {
@@ -76,9 +87,12 @@ class AuthService {
           const SnackBar(
             content: Text('Erro ao se conectar com o servidor'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }
+      return null;
     }
   }
 
@@ -108,13 +122,19 @@ class AuthService {
           );
         }
       } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Falha ao enviar token'),
-              backgroundColor: Colors.red,
-            ),
-          );
+
+        final apiError = ValidationErrorHandler.handleResponse(response, context);
+        if (apiError == null) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Falha ao enviar token'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16),
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -123,6 +143,8 @@ class AuthService {
           const SnackBar(
             content: Text('Erro ao se conectar com o servidor'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -153,13 +175,19 @@ class AuthService {
           );
         }
       } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Falha ao enviar token de redefinição'),
-              backgroundColor: Colors.red,
-            ),
-          );
+
+        final apiError = ValidationErrorHandler.handleResponse(response, context);
+        if (apiError == null) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Falha ao enviar token de redefinição'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16),
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -168,6 +196,8 @@ class AuthService {
           const SnackBar(
             content: Text('Erro ao se conectar com o servidor'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -201,13 +231,19 @@ class AuthService {
           );
         }
       } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Token inválido'),
-              backgroundColor: Colors.red,
-            ),
-          );
+
+        final apiError = ValidationErrorHandler.handleResponse(response, context);
+        if (apiError == null) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Token inválido ou expirado'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16),
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -216,6 +252,8 @@ class AuthService {
           const SnackBar(
             content: Text('Erro ao se conectar com o servidor'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -240,30 +278,36 @@ class AuthService {
         }),
       );
 
-      final responseData = jsonDecode(response.body);
-      
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Cadastro realizado com sucesso!'),
               backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(16),
             ),
           );
-          // Navega para a tela de login e remove todas as rotas anteriores
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoginPage()),
             (route) => false,
           );
         }
       } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(responseData['message'] ?? 'Falha ao realizar cadastro'),
-              backgroundColor: Colors.red,
-            ),
-          );
+
+        final apiError = ValidationErrorHandler.handleResponse(response, context);
+        if (apiError == null) {
+          final responseData = jsonDecode(response.body);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(responseData['message'] ?? 'Falha ao realizar cadastro'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(16),
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -272,6 +316,8 @@ class AuthService {
           const SnackBar(
             content: Text('Erro ao se conectar com o servidor'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -302,6 +348,8 @@ class AuthService {
             const SnackBar(
               content: Text('Senha redefinida com sucesso!'),
               backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(16),
             ),
           );
           Navigator.of(context).pushAndRemoveUntil(
@@ -310,13 +358,19 @@ class AuthService {
           );
         }
       } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Falha ao redefinir a senha'),
-              backgroundColor: Colors.red,
-            ),
-          );
+
+        final apiError = ValidationErrorHandler.handleResponse(response, context);
+        if (apiError == null) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Falha ao redefinir a senha'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.all(16),
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -325,6 +379,8 @@ class AuthService {
           const SnackBar(
             content: Text('Erro ao se conectar com o servidor'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
           ),
         );
       }

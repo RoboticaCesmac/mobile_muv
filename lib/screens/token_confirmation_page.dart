@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../services/auth_service.dart';
+import '../services/auth/auth.dart';
 
 class TokenConfirmationPage extends StatefulWidget {
   final String email;
@@ -68,6 +68,8 @@ class _TokenConfirmationPageState extends State<TokenConfirmationPage> {
         const SnackBar(
           content: Text('Por favor, preencha todos os dígitos do token'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
         ),
       );
       return;

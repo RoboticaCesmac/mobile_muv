@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/route_data.dart';
-import 'token_manager.dart';
-import '../config/environment_config.dart';
+import '../../models/route_data.dart';
+import '../auth/token_manager.dart';
+import '../../config/environment_config.dart';
 
 class RouteService {
   String get baseUrl => EnvironmentConfig.baseUrl;

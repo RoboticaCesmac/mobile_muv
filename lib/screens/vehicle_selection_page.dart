@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/vehicle.dart';
-import '../services/vehicle_service.dart';
+import '../services/user/vehicle_service.dart';
 import 'user_profile_setup_page.dart';
 
 class VehicleSelectionPage extends StatefulWidget {
@@ -27,6 +27,8 @@ class _VehicleSelectionPageState extends State<VehicleSelectionPage> {
         const SnackBar(
           content: Text('Por favor, selecione um Meio de Transporte'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
         ),
       );
       return;
