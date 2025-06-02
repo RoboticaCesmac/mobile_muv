@@ -1,5 +1,3 @@
-# 🚗 EcoRoute - Aplicativo de Mobilidade Sustentável
-
 Um aplicativo Flutter para rastreamento de rotas e promoção da mobilidade sustentável, permitindo aos usuários monitorar suas viagens e ganhar pontos por escolhas ecológicas.
 
 ## 📱 Sobre o Projeto
