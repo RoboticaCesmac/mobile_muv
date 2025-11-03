@@ -184,9 +184,27 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _checkPermissions() async {
     ph.PermissionStatus status = await ph.Permission.location.status;
     
+    // --- Etapa 1: Pedir permissão de uso da localização durante o uso do app ---
     if (status.isDenied) {
+      // Mostra um aviso
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Permissão de Localização'),
+          content: const Text('Para gravar sua rota, o MUV precisa saber sua localização.'),
+          actions: [
+            TextButton(
+              child: const Text('Entendi'),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+          ],
+        ),
+      );
+
+      // Pede a permissão
       status = await ph.Permission.location.request();
       if (status.isDenied) {
+        // Se o usuário negou, volta para a tela inicial
         _navigateToHome();
         return;
       }
@@ -217,10 +235,41 @@ class _RecordingPageState extends State<RecordingPage> {
       }
     }
     
+    // --- Etapa 2: Pedir Permissão de segundo plano ---
+    var backgroundStatus = await ph.Permission.locationAlways.status;
+    if (backgroundStatus.isDenied) {
+      // Mostra um aviso
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Permissão em Segundo Plano'),
+          content: const Text('Para que o MUV grave sua rota mesmo com a tela bloqueada, precisamos da permissão para acesso à localização em segundo plano.'),
+          actions: [
+            TextButton(child: const Text('Entendi, vamos lá!'), onPressed: () => Navigator.of(ctx).pop(),),
+          ],
+        ),
+      );
+
+      // Pede a permissão
+      backgroundStatus = await ph.Permission.locationAlways.request();
+      if (backgroundStatus.isDenied) {
+        // Se o usuário negou, volta para a tela inicial
+        _navigateToHome();
+        return;
+      }
+    }
+
+    if (!backgroundStatus.isGranted) {
+      _navigateToHome();
+      return;
+    }
+
     setState(() {
       _locationPermissionChecked = true;
     });
     
+    // --- Etapa 3: Iniciar a Rota ---
+    // Se chegou aqui, ambas as permissões estão OK.
     _initLocationTracking();
   }
 

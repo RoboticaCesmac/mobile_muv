@@ -6,6 +6,7 @@ import 'screens/splash_screen.dart';
 import 'services/auth/token_manager.dart';
 
 void main() async {
+  print('-------------------------------------');
   WidgetsFlutterBinding.ensureInitialized();
   
   // Carrega as variáveis de ambiente

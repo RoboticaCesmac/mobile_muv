@@ -8,7 +8,7 @@ class EnvironmentConfig {
   
   EnvironmentConfig._internal();
   
-  static bool _isProduction = true;
+  static bool _isProduction = false;
   
   static String get baseUrl {
     return _isProduction 
