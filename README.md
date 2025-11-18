@@ -15,7 +15,8 @@ O EcoRoute é um aplicativo móvel que incentiva a mobilidade sustentável atrav
 - **Dart** - Linguagem de programação
 - **HTTP** - Para comunicação com APIs
 - **Shared Preferences** - Armazenamento local
-- **Geolocator** - Serviços de localização
+- **Google Maps Flutter** - Serviços de localização
+- **Location** - OObtenção de dados de GPS
 - **Permission Handler** - Gerenciamento de permissões
 
 ## 📋 Pré-requisitos
@@ -50,8 +51,8 @@ Antes de começar, certifique-se de ter instalado em sua máquina:
 
 ### 1. Clone o Repositório
 ```bash
-git clone https://github.com/seu-usuario/flutter_tcc.git
-cd flutter_tcc
+git clone https://github.com/seu-usuario/mobile_muv.git
+cd mobile_muv
 ```
 
 ### 2. Verifique a Instalação do Flutter
@@ -66,19 +67,25 @@ flutter pub get
 ```
 
 ### 4. Configuração de Ambiente
+Este projeto requer chaves de API e URLs de backend que não são enviadas para o Git. Você deve criá-las manualmente.
+
 
 #### Crie o arquivo de configuração de ambiente:
 ```bash
-# Crie o arquivo lib/config/environment_config.dart se não existir
+# Duplique o arquivo .env.example para o arquivo chamado .env na raiz do projeto
 ```
 
 #### Configure as variáveis de ambiente necessárias:
-```dart
-// lib/config/environment_config.dart
-class EnvironmentConfig {
-  static const String baseUrl = 'https://sua-api.com/api';
-  // Adicione outras configurações necessárias
-}
+```ini
+PRODUCTION_URL=https://sua-api-producao.com/api/v1
+LOCAL_URL=http://localhost:8000/api/v1
+GOOGLE_MAPS_API_KEY=SUA_CHAVE_API_DO_GOOGLE_MAPS_VAI_AQUI
+```
+
+### Chave de API do Google Maps
+O SDK nativo do iOS não consegue ler o .env. Portanto, precisamos injetar a chave de outra forma. Crie um novo arquivo em: `ios/Flutter/MapsKey.xcconfig` e adicione o seguinte conteúdo a ele, usando a mesma chave do .env:
+```ini
+GOOGLE_MAPS_API_KEY=SUA_CHAVE_API_DO_GOOGLE_MAPS_VAI_AQUI
 ```
 
 ### 5. Configuração de Permissões
@@ -89,6 +96,7 @@ class EnvironmentConfig {
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 ```
 
 #### iOS (ios/Runner/Info.plist):
@@ -151,21 +159,6 @@ lib/
 │   └── validation/     # Validação e tratamento de erros
 ├── widgets/            # Widgets reutilizáveis
 └── main.dart           # Ponto de entrada da aplicação
-```
-
-## 🔐 Configuração da API
-
-### 1. Backend
-Certifique-se de que o backend esteja rodando e acessível.
-
-### 2. Configuração da URL
-Atualize a `baseUrl` no arquivo `lib/config/environment_config.dart`:
-```dart
-class EnvironmentConfig {
-  static const String baseUrl = 'http://localhost:8000/api'; // Para desenvolvimento local
-  // ou
-  static const String baseUrl = 'https://sua-api-producao.com/api'; // Para produção
-}
 ```
 
 ## 📱 Funcionalidades Principais

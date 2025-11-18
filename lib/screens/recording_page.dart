@@ -26,6 +26,7 @@ class _RecordingPageState extends State<RecordingPage> {
   LatLng? _currentPosition;
   Set<Marker> _markers = {};
   bool _locationPermissionChecked = false;
+  StreamSubscription<LocationData>? _locationSubscription;
   final RouteRecordingService _routeRecordingService = RouteRecordingService();
   final UserProfileService _userProfileService = UserProfileService();
   final VehicleService _vehicleService = VehicleService();
@@ -181,96 +182,81 @@ class _RecordingPageState extends State<RecordingPage> {
     }
   }
 
-  Future<void> _checkPermissions() async {
-    ph.PermissionStatus status = await ph.Permission.location.status;
-    
-    // --- Etapa 1: Pedir permissão de uso da localização durante o uso do app ---
-    if (status.isDenied) {
-      // Mostra um aviso
-      await showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Permissão de Localização'),
-          content: const Text('Para gravar sua rota, o MUV precisa saber sua localização.'),
-          actions: [
-            TextButton(
-              child: const Text('Entendi'),
-              onPressed: () => Navigator.of(ctx).pop(),
-            ),
-          ],
-        ),
-      );
-
-      // Pede a permissão
-      status = await ph.Permission.location.request();
-      if (status.isDenied) {
-        // Se o usuário negou, volta para a tela inicial
-        _navigateToHome();
-        return;
-      }
-    }
-    
-    if (status.isPermanentlyDenied) {
-      _showPermissionDeniedDialog();
-      return;
-    }
-    
-    if (!status.isGranted) {
-      _navigateToHome();
-      return;
-    }
-
+Future<void> _checkPermissions() async {
+    // --- Etapa 1: Checar se o GPS está ligado (Serviço) ---
     bool serviceEnabled = await _location.serviceEnabled();
     if (!serviceEnabled) {
-      serviceEnabled = await _location.requestService();
+      serviceEnabled = await _location.requestService(); // <-- DIÁLOGO DE GPS
       if (!serviceEnabled) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Serviço de localização não está ativado.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        _navigateToHome();
+        return;
+      }
+    }
+
+    // --- Etapa 2: Pedir Permissão "Durante o Uso" (Usando location) ---
+    var permissionGranted = await _location.hasPermission();
+
+    // 1. CHECA PRIMEIRO O 'DENIED FOREVER'
+    if (permissionGranted == PermissionStatus.deniedForever) {
+      // O usuário já negou permanentemente. Não podemos pedir.
+      // Direto para o diálogo de "Abrir Configurações".
+      _showPermissionDeniedDialog(); 
+      return;
+    }
+
+    // 2. SE NÃO FOI 'DENIED FOREVER', CHECA SE FOI 'DENIED'
+    if (permissionGranted == PermissionStatus.denied) {
+      // O usuário ainda não escolheu, ou negou da última vez.
+      // Vamos pedir.
+      permissionGranted = await _location.requestPermission(); // <-- DIÁLOGO DE LOCALIZAÇÃO (WhenInUse)
+      if (permissionGranted != PermissionStatus.granted) {
+        // O usuário acabou de clicar em "Não Permitir".
+        // Saia da tela, ele tentará de novo na próxima vez.
         _navigateToHome();
         return;
       }
     }
     
-    // --- Etapa 2: Pedir Permissão de segundo plano ---
-    var backgroundStatus = await ph.Permission.locationAlways.status;
-    if (backgroundStatus.isDenied) {
-      // Mostra um aviso
-      await showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Permissão em Segundo Plano'),
-          content: const Text('Para que o MUV grave sua rota mesmo com a tela bloqueada, precisamos da permissão para acesso à localização em segundo plano.'),
-          actions: [
-            TextButton(child: const Text('Entendi, vamos lá!'), onPressed: () => Navigator.of(ctx).pop(),),
-          ],
-        ),
-      );
+    // --- SUCESSO! TEMOS "DURANTE O USO" ---
+    // Agora, vamos pedir a "promoção" para "Sempre".
+    
+    // Mostra o diálogo "Entendi" ANTES de pedir
+    await showDialog(
+      context: context,
+      barrierDismissible: false, 
+      builder: (ctx) => AlertDialog(
+        title: const Text('Permissão em Segundo Plano'),
+        content: const Text('Para que o MUV grave sua rota mesmo com a tela bloqueada, precisamos da permissão para acesso "Always".'),
+        actions: [
+          TextButton(child: const Text('Entendi, vamos lá!'), onPressed: () => Navigator.of(ctx).pop()),
+        ],
+      ),
+    );
 
-      // Pede a permissão
-      backgroundStatus = await ph.Permission.locationAlways.request();
-      if (backgroundStatus.isDenied) {
-        // Se o usuário negou, volta para a tela inicial
-        _navigateToHome();
-        return;
+    // --- Etapa 3: PEDIR A PROMOÇÃO PARA "SEMPRE" ---
+    // Ela deve trigar o diálogo "Change to Always"
+    bool backgroundEnabled = await _location.enableBackgroundMode(enable: true); 
+
+    if (!backgroundEnabled) {
+      // Se o usuário negou a promoção (clicou em "Keep When In Use")
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(
+             content: Text('A gravação pode parar se o app for para segundo plano.'),
+             backgroundColor: Colors.orange,
+             duration: Duration(seconds: 4),
+           ),
+        );
       }
+      // Não saia, apenas continue com a permissão "WhenInUse"
     }
 
-    if (!backgroundStatus.isGranted) {
-      _navigateToHome();
-      return;
-    }
-
+    // --- Etapa 4: Iniciar a Rota ---
+    // Se chegou aqui, as permissões estão OK (seja WhenInUse ou Always).
     setState(() {
       _locationPermissionChecked = true;
     });
-    
-    // --- Etapa 3: Iniciar a Rota ---
-    // Se chegou aqui, ambas as permissões estão OK.
-    _initLocationTracking();
+    _initLocationTracking(); 
   }
 
   void _navigateToHome() {
@@ -315,6 +301,8 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   void _initLocationTracking() {
+    _location.enableBackgroundMode(enable: true);
+
     _location.changeSettings(
       accuracy: LocationAccuracy.high,
       interval: 500,
@@ -323,7 +311,7 @@ class _RecordingPageState extends State<RecordingPage> {
     
     _getCurrentLocation();
     
-    _location.onLocationChanged.listen((LocationData locationData) async {
+    _locationSubscription = _location.onLocationChanged.listen((LocationData locationData) async {
       if (!mounted) return;
       
       if (locationData.latitude != null && locationData.longitude != null) {
@@ -929,6 +917,8 @@ class _RecordingPageState extends State<RecordingPage> {
   
   @override
   void dispose() {
+    _locationSubscription?.cancel();
+    _location.enableBackgroundMode(enable: false);
     _connectivitySubscription?.cancel();
     _controller?.dispose();
     super.dispose();
